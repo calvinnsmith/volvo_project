@@ -1,5 +1,5 @@
 library(tidyverse)
-
+library(dplyr)
 
 ### Data Preparation ####
 classes <- seq(0,9)
@@ -14,19 +14,100 @@ colnames(one_outlier) <- classes
 
 # true classes inlier set
 true_inlier <- read.csv("inlier_true_labels.csv", sep = ",", header = F)
-
+colnames(true_inlier) <- "class"
 
 #finding outliers from inlier dataset
+#pred_classes <- numeric(10000)
+  #for (i in 1:10000){
+    #pred_classes[i] <- which(one_inlier[i,] == max(one_inlier[i,]))
+#}
+#pred_classes <- pred_classes - 1 
+
+#c <- pred_classes == true_inlier
+
+#inlier <- one_inlier[c == TRUE,]
+#outlier <- one_inlier[c == FALSE,]
+
+#### Inlier training, validation and testing ####
+one_inlier$class <- true_inlier$class
+one_inlier <- one_inlier %>% group_by(class) %>% arrange(class)
+one_inlier$index <- 1:nrow(one_inlier)
+
+set.seed(123)
+
+train_inlier <- sample_n(one_inlier,600,replace = FALSE)
+valid_inlier <- sample_n(one_inlier[-train_inlier$index,],200,replace = FALSE)
+test_inlier <- one_inlier[-c(train_inlier$index,valid_inlier$index),]
+
+
+# check that classes are proportionate
+lengths <- numeric(10)
+for (i in 1:10){
+  lengths[i] <- length(which(one_outlier$class == i-1))
+}
+
+
+#### "classifying outlier dataset" ####
+
 pred_classes <- numeric(10000)
-  for (i in 1:10000){
-    pred_classes[i] <- which(one_inlier[i,] == max(one_inlier[i,]))
+for (i in 1:10000){
+  pred_classes[i] <- which(one_outlier[i,] == max(one_outlier[i,]))
 }
 pred_classes <- pred_classes - 1 
 
-c <- pred_classes == true_inlier
+one_outlier$class <- pred_classes
+one_outlier <- one_outlier %>% arrange(class)
+one_outlier$index <- 1:nrow(one_outlier)
 
-inlier <- one_inlier[c == TRUE,]
-outlier <- one_inlier[c==FALSE,]
+
+### Proportion of outliers in training data ####
+
+#calculating proportion of classes in outlier data
+counts_class <- numeric(10)
+for (i in 1:10){
+  counts_class[i] <- length(which(one_outlier$class == i-1))
+}
+prop_class <- counts_class/nrow(one_outlier)
+
+# function that given a proportion "prop", obtains the indices of training, validation
+# and testing for the outlier dataset
+
+function_outlier <- function(prop){
+
+#nr of samples to obtain specified % of outliers  
+samples_train <- floor(nrow(train_inlier)*prop/(1-prop))
+samples_valid <- floor(nrow(valid_inlier)*prop/(1-prop))
+samples_test <- floor(nrow(test_inlier)*prop/(1-prop))
+
+index <- vector(mode = "list",length = 3)
+
+for (i in 1:10){
+    
+    class_vec <- one_outlier[which(one_outlier$class == i-1),]
+    
+    train <- sample_n(class_vec,samples_train*prop_class[i])
+    valid <- sample_n(class_vec[-train$index,],samples_valid*prop_class[i])
+    test <- sample_n(class_vec[-c(train$index,valid$index),],samples_test*prop_class[i])
+    
+    index[[1]] <- append(index[[1]],train$index)
+    index[[2]] <- append(index[[2]],valid$index)
+    index[[3]] <- append(index[[3]],test$index)
+    
+  }
+return(index)
+}
+train_outlier <- one_outlier[outlier_index[[1]],]
+valid_outlier <- one_outlier[outlier_index[[2]],]
+test_outlier <- one_outlier[outlier_index[[3]],]
+
+
+
+#### Final training, validation and testing data ####
+
+X_train <- rbind(train_inlier,train_outlier)
+X_valid <- rbind(valid_inlider,valid_outlier)
+X_test <- rbind(test_inlier,test_outlier)
+
 
 
 
