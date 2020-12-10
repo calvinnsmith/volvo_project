@@ -83,6 +83,8 @@ index <- vector(mode = "list",length = 3)
 
 for (i in 1:10){
     
+    set.seed(1)
+    
     class_vec <- one_outlier[which(one_outlier$class == i-1),]
     
     train <- sample_n(class_vec,samples_train*prop_class[i])
@@ -96,19 +98,48 @@ for (i in 1:10){
   }
 return(index)
 }
-train_outlier <- one_outlier[outlier_index[[1]],]
-valid_outlier <- one_outlier[outlier_index[[2]],]
-test_outlier <- one_outlier[outlier_index[[3]],]
+
+outlier_index_1 <- function_outlier(0.003)
+outlier_index_2 <- function_outlier(0.01)
+outlier_index_3 <- function_outlier(0.05)
+
+train_outlier_1 <- one_outlier[outlier_index_1[[1]],]
+valid_outlier_1 <- one_outlier[outlier_index_1[[2]],]
+test_outlier_1 <- one_outlier[outlier_index_1[[3]],]
+
+train_outlier_2 <- one_outlier[outlier_index_2[[1]],]
+valid_outlier_2 <- one_outlier[outlier_index_2[[2]],]
+test_outlier_2 <- one_outlier[outlier_index_2[[3]],]
+
+train_outlier_3 <- one_outlier[outlier_index_3[[1]],]
+valid_outlier_3 <- one_outlier[outlier_index_3[[2]],]
+test_outlier_3 <- one_outlier[outlier_index_3[[3]],]
 
 
 
 #### Final training, validation and testing data ####
 
-X_train <- rbind(train_inlier,train_outlier)
-X_valid <- rbind(valid_inlider,valid_outlier)
-X_test <- rbind(test_inlier,test_outlier)
+X_train_1 <- rbind(train_inlier,train_outlier_1)
+X_valid_1 <- rbind(valid_inlier,valid_outlier_1)
+X_test_1 <- rbind(test_inlier,test_outlier_1)
 
+X_train_2 <- rbind(train_inlier,train_outlier_2)
+X_valid_2 <- rbind(valid_inlier,valid_outlier_2)
+X_test_2 <- rbind(test_inlier,test_outlier_2)
 
+X_train_3 <- rbind(train_inlier,train_outlier_3)
+X_valid_3 <- rbind(valid_inlier,valid_outlier_3)
+X_test_3 <- rbind(test_inlier,test_outlier_3)
 
+write.csv(X_train_1, "train_0003.csv")
+write.csv(X_valid_1, "valid_0003.csv")
+write.csv(X_test_1, "test_0003.csv")
 
+write.csv(X_train_2, "train_001.csv")
+write.csv(X_valid_2, "valid_001.csv")
+write.csv(X_test_2, "test_001.csv")
+
+write.csv(X_train_3, "train_005.csv")
+write.csv(X_valid_3, "valid_005.csv")
+write.csv(X_test_3, "test_005.csv")
 
