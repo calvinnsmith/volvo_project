@@ -1,11 +1,10 @@
-#library(fpc)
+library(fpc)
 library(dbscan)
 library(tidyverse)
 library(dplyr)
 library(factoextra)
 library(caret)
 library(ROCR)
-library(rlist)
 
 
 classes <- seq(0,9)
@@ -23,8 +22,6 @@ colnames(train_1_001)[2:11] <- classes
 train_1_005 <- read.csv("train_1_005.csv")
 colnames(train_1_005)[2:11] <- classes
 
-
-
 ### validation data ####
 valid_1_0003 <- read.csv("valid_1_0003.csv")
 colnames(valid_1_0003)[2:11] <- classes
@@ -36,8 +33,6 @@ valid_1_005 <- read.csv("valid_1_005.csv")
 colnames(valid_1_005)[2:11] <- classes
 
 
-
-
 plot(train_1_005[,2],train_1_005[,3])
 
 
@@ -45,15 +40,17 @@ plot(train_1_005[,2],train_1_005[,3])
 #### DBSCAN Classwise #####
 
 #choose training data
-train_data <- train_1_005[1:6000,]
+train_data <- train_1_0003
+train_data$out <- as.factor(train_data$out)
+
 
 #choose validation data
-valid_data <- valid_1_005[1:2000,]
-
+valid_data <- train_1_0003
+valid_data$out <- as.factor(valid_data$out)
 
 # label data as inlier = 1 and outlier = 0
 for (i in 1:nrow(train_data)){
-  if (max.col(train_data[i,2:11])-1==train_data[i,12]){
+  if (max.col(train_data[i,1:10])-1==train_data[i,11]){
     train_data$inlier[i] <- 1 }
   else {
     train_data$inlier[i] <- 0
@@ -78,16 +75,11 @@ valid_data$inlier[2001:nrow(valid_data)] <- 0
 
 # finding optimal classwise eps and minpts
 
-eps <- seq(0.01,1.0,length.out = 5)
-minpts <- floor(seq(10,100, length.out = 5))
+eps <- seq(0.001,0.1,length.out = 10)
+minpts <- floor(seq(10,100, length.out = 10))
 
 #try different training data
-#train_data <- subset(train_data, inlier == 1)
-
-valid_data <- valid_data %>% group_by(class,inlier)
-valid_data <- sample_n(valid_data,size = 8)
-
-
+#train_data <- subset(train_data, out != "out")
 
 auc_class <- numeric(length(10))
 auc_index <- list(length(10))
@@ -100,9 +92,9 @@ for (i in 1:10){
   auc_matrix <- matrix(data = NA, nrow = length(eps), ncol = length(minpts))
   for (j in 1:length(eps)){
     for( k in 1:length(minpts)){
-      set.seed(123)
-      db <- dbscan(train[,2:11], eps = eps[j], minPts = minpts[k])
-      pred <- predict(db, newdata = valid[,2:11], data = train[,2:11])
+      
+      db <- dbscan(train[,1:10], eps = eps[j], minPts = minpts[k])
+      pred <- predict(db, newdata = valid[,1:10], data = train[,1:10])
       pred[which(pred != 0)] <- 1
       
       conf <- confusionMatrix(as.factor(pred),as.factor(valid$inlier))
@@ -115,6 +107,9 @@ for (i in 1:10){
       
       auc_matrix[j,k] <- perf@y.values[[1]][1]
       
+      #balanced accuracy
+      #acc_matrix[j,k] <- (sens + spec)/2
+      #dist_matrix[j,k] <- sqrt(fpr^2 + (sens -1)^2)
      
     }
   }
@@ -142,8 +137,14 @@ for (i in 1:10){
 
 
 
-db <- dbscan(train[,2:11], eps = 0.01, minPts = 10)
-pred <- predict(db, newdata = valid[,2:11], data = train[,2:11])
+
+lengths <- numeric(10)
+for (i in 1:10){
+  lengths[i] <- length(which(X_valid$class == i-1))
+}
+
+
+
 
 
 
