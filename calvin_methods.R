@@ -48,7 +48,7 @@ plot(train_1_005[,2],train_1_005[,3])
 train_data <- train_1_005[1:6000,]
 
 #choose validation data
-valid_data <- valid_1_005[1:2000,]
+valid_data <- valid_1_005
 
 
 # label data as inlier = 1 and outlier = 0
@@ -78,21 +78,17 @@ valid_data$inlier[2001:nrow(valid_data)] <- 0
 
 # finding optimal classwise eps and minpts
 
-eps <- seq(0.01,1.0,length.out = 5)
+eps <- seq(0.001,1.0,length.out = 30)
 minpts <- floor(seq(10,100, length.out = 5))
 
 #try different training data
 #train_data <- subset(train_data, inlier == 1)
 
 valid_data <- valid_data %>% group_by(class,inlier)
-valid_data <- sample_n(valid_data,size = 8)
-
-
+valid_data <- sample_n(valid_data,size = 20)
 
 auc_class <- numeric(length(10))
 auc_index <- list(length(10))
-
-
 
 for (i in 1:10){
   train <- subset(train_data, class == i-1)
@@ -142,7 +138,7 @@ for (i in 1:10){
 
 
 
-db <- dbscan(train[,2:11], eps = 0.01, minPts = 10)
+db <- dbscan(train[,2:11], eps = 0.27, minPts = 55)
 pred <- predict(db, newdata = valid[,2:11], data = train[,2:11])
 
 
